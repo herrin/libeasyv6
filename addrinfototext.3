@@ -1,0 +1,50 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH ADDRINFOTOTEXT 3 "March 18, 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+addrinfototext \- present the contents of a struct addrinfo as a string
+.SH SYNOPSIS
+.nf
+.BR "#include <easyv6.h>" 
+.sp
+.BI "char *addrinfototext(const struct addrinfo *" address ", "
+.BI "                     char *" buf ", size_t " bytes ");"
+.fi
+.SH DESCRIPTION
+Return the IP address of the first addrinfo structure as a text string.
+.PP
+If buf is NULL, malloc() enough memory to hold the text address.
+.PP
+.SH RETURN VALUE
+On success, return a 0 terminated string containing a textual representation
+of the IPv4, IPv6 or future protocol address.
+On error, return NULL.
+.SH EXAMPLE
+See
+.B connectbyname (3)
+for an example.
+.fi
+.SH SEE ALSO
+.nh
+.BR connectbyaddrinfo (3),
+.BR connectbyname (3),
+.BR getpeernametext (3),
+.BR listenbyname (3),
+.BR timeoutgetaddrinfo (3),
+.hy
+.SH AUTHOR
+libeasyv6 was written by William Herrin <bill@herrin.us>.

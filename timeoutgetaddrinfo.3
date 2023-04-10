@@ -1,0 +1,56 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH TIMEOUTGETADDRINFO 3 "March 18, 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+timeoutgetaddrinfo \- getaddrinfo with a time out
+.SH SYNOPSIS
+.nf
+.BR "#include <easyv6.h>" 
+.sp
+.BI "int timeoutgetaddrinfo(const char *" node ", const char *" service ,
+.BI "                       struct addrinfo *" hints ", struct addrinfo ** " res ","
+.BI "                       long long " timeout ");"
+.fi
+.SH DESCRIPTION
+Works just like getaddrinfo (3) except
+timeoutgetaddrinfo will return with an error if it takes
+longer the timeout milliseconds to complete. Avoid setting the timeout
+under 5 seconds (5000 ms).
+.PP
+Note that timeoutgetaddrinfo() works by calling getaddrinfo_a(), a GNU libc
+extension. getaddrinfo_a, in turn, spawns a thread which does a blocking
+getaddrinfo(). Because that thread is not guaranteed to complete in a
+timely manner, it will continue even after timeoutgetaddrinfo() returns
+due to a time out. Resources allocated to that thread will be cleaned up
+in by later call to timeoutgetaddrinfo() or when the program overall ends.
+.PP
+See 
+.I getaddrinfo (3)
+for more.
+.SH RETURN VALUE
+See
+.I getaddrinfo (3)
+.SH SEE ALSO
+.nh
+.BR addrinfototext (3),
+.BR connectbyaddrinfo (3),
+.BR connectbyname (3),
+.BR getpeernametext (3),
+.BR listenbyname (3),
+.hy
+.SH AUTHOR
+libeasyv6 was written by William Herrin <bill@herrin.us>.

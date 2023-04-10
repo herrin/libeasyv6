@@ -1,0 +1,59 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH CONNECTBYADDRINFO 3 "March 18, 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+connectbyaddrinfo \- initiate an IP version agnostic connection
+.SH SYNOPSIS
+.nf
+.BR "#include <easyv6.h>" 
+.sp
+.BI "int connectbyaddrinfo(const struct addrinfo *addresses,
+.BI "                  long long " timeout ", struct CONNECTOPTIONS *" options );
+.fi
+.SH DESCRIPTION
+The
+.BR connectbyaddrinfo ()
+function works identically to 
+.B connectbyname (3)
+except it takes an addrinfo structure instead of a name and service.
+.PP
+Use of connectbyaddrinfo() is STRONGLY DISCOURAGED. It is not future proof:
+future SOCK_STREAM protocols which can change addresses during flight based
+on the host name will not be compatible with connectbyaddrinfo().
+.PP
+.SH RETURN VALUE
+On success, a file descriptor for the new connected socket is returned.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.PP
+Note that the returned socket will be in non-blocking mode. If blocking
+mode is desired, use fcntl().
+.SH ERRORS
+See 
+.B connectbyname (3)
+
+.SH SEE ALSO
+.nh
+.BR addrinfototext (3),
+.BR connectbyname (3),
+.BR getpeernametext (3),
+.BR listenbyname (3),
+.BR timeoutgetaddrinfo (3),
+.hy
+.SH AUTHOR
+libeasyv6 was written by William Herrin <bill@herrin.us>.

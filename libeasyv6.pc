@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libeasyv6
+Description: IPvIDontCare socket API
+Version: 1.2.44
+Libs: -L${libdir} -leasyv6
+Libs.private: -lrt -lanl
+Cflags: -I${includedir}

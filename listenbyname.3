@@ -1,0 +1,108 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH LISTENBYNAME 3 "March 18, 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+listenbyname \- listen for IP version agnostic connections
+.SH SYNOPSIS
+.nf
+.BR "#include <easyv6.h>" 
+.sp
+.BI "int listenbyname(const char *" service ,
+.BI "                 int " socktype ", int " backlog ");"
+.fi
+.SH DESCRIPTION
+Open a socket of type socktpye (SOCK_STREAM or SOCK_SEQPACKET) bound to
+the service named service and begin listening for incoming connections. The
+socket will accept IPv4 and IPv6 connections and may in the future
+accept incoming connections on new protocols.
+.PP
+Works just like listen(2) but also creates and binds the socket.
+.TP
+.B service
+A TCP port number such as "80" or textual representation such as "http".
+.TP
+.B backlog
+The
+.I backlog
+argument defines the maximum length
+to which the queue of pending connections for
+.I sockfd
+may grow.
+If a connection request arrives when the queue is full, the client
+may receive an error with an indication of
+.B ECONNREFUSED
+or, if the underlying protocol supports retransmission, the request may be
+ignored so that a later reattempt at connection succeeds.
+
+.SH RETURN VALUE
+On success, a file descriptor for the new listening socket is returned.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.PP
+Note that the returned socket will be in non-blocking mode. If blocking
+mode is desired, use fcntl().
+.SH ERRORS
+Refer to 
+.I socket (2),
+.I bind (2),
+and 
+.I listen (2)
+for possible 
+.I errno
+values.
+.SH EXAMPLE
+.nf
+#include <easyv6.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h> /* exit */
+#include <sys/socket.h>
+
+int main (int argc, char **argv) {
+  int i, l;
+  char s[200], *p;
+
+  l = listenbyname("3000",SOCK_STREAM,10);
+  fprintf (stdout,"Listening on port 3000...\n");
+  i = accept (l,NULL,NULL);
+  p=getpeernametext(i,s,200);
+  if (p) {
+    printf ("Connect from: %s port %s\n",p,s);
+  } else {
+    printf ("getpeernametext failed: socket=%d, errno=%d, error=%s\n",
+        i,errno,strerror(errno));
+  }
+  p="You connected to the tester. Bye!\n";
+  write (i,p,strlen(p));
+  shutdown (i,SHUT_RDWR);
+  close (i);
+  close (l);
+
+  return 0;
+}
+.fi
+.SH SEE ALSO
+.nh
+.BR addrinfototext (3),
+.BR connectbyaddrinfo (3),
+.BR connectbyname (3),
+.BR getpeernametext (3),
+.BR timeoutgetaddrinfo (3),
+.hy
+.SH AUTHOR
+libeasyv6 was written by William Herrin <bill@herrin.us>.

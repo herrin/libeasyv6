@@ -1,0 +1,218 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH CONNECTBYNAME 3 "March 18, 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+connectbyname \- initiate an IP version agnostic connection
+.SH SYNOPSIS
+.nf
+.BR "#include <easyv6.h>" 
+.sp
+.BI "int connectbyname(const char *" name ", const char *" service ,
+.BI "                  long long " timeout ", struct CONNECTOPTIONS *" options );
+.fi
+.SH DESCRIPTION
+The
+.BR connectbyname ()
+function creates a 
+.B SOCK_STREAM
+socket (a TCP socket) and connects to host 
+.B name
+on port
+.B service
+via IPv4, IPv6 or any other eligible Internet protocol. 
+.BR connectbyname ()
+parallelizes its work, attempting connections to multiple IP addresses
+associated with the name if the first does not immediately respond. It waits
+for any of the attempted connections to complete and returns the first one
+which does.
+.PP
+.BR connectbyname ()
+will abort if it can not establish a connection within 
+.B timeout
+milliseconds give or take a second. The wait before trying the next address
+scales based on the timeout but is not more than 1 second and not not less
+than 100ms. Setting the time outto less than
+5 seconds (5000 ms) is not recommended. 
+.PP
+Note that if the system timeout for connect()s is shorter than the timeout
+passed to this function, the shorter timeout will be used.
+.PP
+If
+.B options
+is not NULL, 
+.BR connectbyname ()
+will use the following structure to fine tune its behavior:
+.PP
+.nf
+struct CONNECTOPTIONS {
+    const struct addrinfo       *like;
+    int                         dnspinning;
+    const struct addrinfo       *skip; 
+    struct addrinfo             *picked;
+    char                        reportpicked;
+    struct CONNECTBYNAMEDETAILS *details;
+    char                        reportdetails;
+    int                         getaddrinfoerror;
+    int                         numaddresses;
+};
+.fi
+.TP
+.B like
+connectbyname() will prefer to connect to the addresses in this addrinfo
+structure if any are associated with the name. Use this to encourage
+connectbyname() to use the same destination on connections subsequent to
+the first.
+.TP
+.BR dnspinning
+If the underlying protocol accepts connections to an address which doesn't
+consider itself to have the provided name, connectbyname will refuse to
+connect to any address not present in the like list. TCP, for example,
+only cares about the numeric address during the connect() phase. This
+supports Web Browser DNS pinning which is used to resolve the DNS
+rebinding Javascript security vulnerability. Use of this option is
+STRONGLY DISCOURAGED.
+.TP
+.B skip
+Do not connect to these addresses even if they are associated with the
+name. Skipped addresses will not be used even if they are liked.
+.TP
+.B " "
+Suppose you connectbyname() to an email server. You get a connection but
+the server never sends an SMTP banner. There are other addresses for the
+server. What do you do? connectbyname() again but exclude the address
+which didn't return a banner by including it in the skip list.
+.TP
+.BR reportpicked
+If reportpicked is set to a non-zero value then on success, connectbyname()
+sets picked to the addrinfo structure associated with the
+connection. May be used in later calls assigned to like or skip. Must
+be freed by the caller with freeaddrinfo(3).
+.TP
+.BR reportdetails
+Regardless of success or failure, fill in details with the remote addresses
+tried and the errno for each. 
+.TP
+.BR getaddrinfoerror
+If the name lookup fails, report an error consistent with 
+.B getaddrinfo(3).
+.TP
+.BR numaddresses
+Fill in with the number of candidate adddresses that 
+connectbyname() tried (on failure) or could have tried (on success).
+.PP
+If reportdetails is set to a non-zero value then details is filled in
+with the following structure:
+.PP
+.nf
+struct CONNECTBYNAMEDETAILS {
+    const struct addrinfo      *addresslist;
+    struct CONNECTBYNAMERESULT results[];
+};
+
+struct CONNECTBYNAMERESULT {
+    const struct addrinfo *address; 
+    int                   error;
+};
+.fi
+.PP
+There are exactly numaddresses results. The first (and only the first)
+addrinfo struct in each result contains the address associated with the
+errno from connect() in error.
+.PP
+Free *details with: freeaddrinfo(details->addresslist); free(details);
+.PP
+.SH RETURN VALUE
+On success, a file descriptor for the new connected socket is returned.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.PP
+Note that the returned socket will be in non-blocking mode. If blocking
+mode is desired, use fcntl().
+.SH ERRORS
+Errno will be set to the numerically highest errno set by any of the 
+underlying calls to
+.BR connect (2), 
+or:
+.TP
+.B EFAULT
+The attempt to find an address for the name or service failed or timed out.
+
+.SH EXAMPLE
+.nf
+#include <easyv6.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h> /* exit */
+#include <unistd.h> /* fcntl */
+#include <fcntl.h> /* fcntl */
+#include <string.h> /* memset */
+#include <sys/socket.h>
+
+void drainsocket (int socket) {
+  int fcntlflags, count;
+  char bytes[100];
+
+  fcntlflags = fcntl(socket,F_GETFL,0);
+  fcntl(socket,F_SETFL,fcntlflags & (~O_NONBLOCK));
+  shutdown (socket,SHUT_WR);
+  while ((count=read(socket,bytes,100))>0) {
+    fwrite (bytes,count,1,stdout);
+  }
+  shutdown (socket,SHUT_RD);
+  close (socket);
+  return;
+}
+
+int main (int argc, char **argv) {
+  int socket;
+  char *host, *service;
+  struct CONNECTOPTIONS options;
+  char s[200], *address, *p;
+
+  host="addrtest.dirtside.com";
+  service="ssh";
+  if (argc>1) host=argv[1];
+  if (argc>2) service=argv[2];
+
+  memset (&options,0,sizeof(options));
+  options.reportpicked = 1;
+  socket = connectbyname (host,service,10000,&options);
+  address = addrinfototext(options.picked,s,200);
+  if (address) printf ("Connected to IP Address: %s\n",address);
+  if (options.picked) {
+    freeaddrinfo(options.picked);
+    options.picked=NULL;
+  }
+  if (socket<0) {
+    printf ("Connectbyname failed: socket=%d, errno=%d, error=%s\n",
+      socket,errno,strerror(errno));
+  } else drainsocket(socket);
+
+  return 0;
+}
+.fi
+.SH SEE ALSO
+.nh
+.BR addrinfototext (3),
+.BR connectbyaddrinfo (3),
+.BR getpeernametext (3),
+.BR listenbyname (3),
+.BR timeoutgetaddrinfo (3),
+.hy
+.SH AUTHOR
+libeasyv6 was written by William Herrin <bill@herrin.us>.

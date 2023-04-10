@@ -1,0 +1,60 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH GETPEERNAMETEXT 3 "March 18, 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+getpeernametext \- report the IP address of the remote connection
+.SH SYNOPSIS
+.nf
+.BR "#include <easyv6.h>" 
+.sp
+.BI "char *getpeernametext (int " socket ", char *" buf ", size_t " bytes ");"
+.fi
+.SH DESCRIPTION
+Determine the remote IP address and port connected to
+.I socket
+and return a textual representation.
+.PP
+If buf is NULL, malloc() enough memory to hold the IP address. Otherwise
+store the port followed by a nul (0) followed by the IP address in buf
+and return the IP address.
+.PP
+.SH RETURN VALUE
+On success, copy a 0 terminated string containing the service name
+(a port number for TCP) into buf and return a 0 terminated string
+containing the IP adddress. 
+On error, NULL is returned, and
+.I errno
+is set appropriately.
+.SH ERRORS
+Refer to 
+.I getpeername (2)
+for possible 
+.I errno
+values.
+.SH EXAMPLE
+See 
+.I listenbyname (3)
+.SH SEE ALSO
+.nh
+.BR addrinfototext (3),
+.BR connectbyaddrinfo (3),
+.BR connectbyname (3),
+.BR listenbyname (3),
+.BR timeoutgetaddrinfo (3),
+.hy
+.SH AUTHOR
+libeasyv6 was written by William Herrin <bill@herrin.us>.
