@@ -1,0 +1,11 @@
+asyv6-0.1 -- IPv{I don't care} connect() API
+
+Libeasyv6-0.1 provides connecbyname() and listenbyname() functions which
+facilitate writing IPv{I don't care} applications. These functions
+efficiently connect to whatever IPv4 or IPv6 addresses associated with
+a given name that they can. Where connections to an address don't promptly
+respond, additional addresses are tried in parallel rather than waiting for
+the first address to time out. In principle the APIs are forward-compatible
+with future transport protocols which support small-site multihoming by
+shifting between different IP addresses at each end of the connection in
+response to network conditions.
